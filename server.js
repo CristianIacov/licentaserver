@@ -3,8 +3,32 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt-nodejs');
 const cors = require('cors');
 const knex = require('knex');
+const multer = require('multer');
 const app = express();
+app.use('/uploads', express.static('uploads'));
 
+const storage = multer.diskStorage({
+    destination: function(req,file,cb){
+
+        cb(null,'./uploads/');
+    },
+    filename: function(req,file,cb){
+
+        cb(null,file.originalname);
+    }
+});
+const fileFilter = (req,file,cb) => {
+    if (file.mimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg' || file.mimetype === 'image/jfif'){
+        cb(null,true);}
+        else{
+        cb(null,false);
+    }
+}
+const upload = multer({storage: storage,
+    limits: {
+    fileSize: 1024*1024*5},
+    fileFilter:fileFilter
+    });
 const db = knex({
     
     client: 'pg',
@@ -16,13 +40,12 @@ const db = knex({
     }
   });
 
-  db.select('*').from('users').then(data =>{
-      console.log(data);
-  });
+
 
 app.use(cors());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
+
 
 app.post('/register', (req,res) => {
     const {email,firstname,lastname,password} = req.body;
@@ -51,6 +74,9 @@ app.post('/register', (req,res) => {
        
     .catch(err => res.status(400).json('Register error'))
 })
+
+
+
 app.post('/signin', (req,res) => {
     db.select('email','hash').from('login')
     .where('email','=',req.body.email)
@@ -69,5 +95,65 @@ app.post('/signin', (req,res) => {
 
     })
     .catch(err => status(400).json('wrong credentials'))
+});
+
+
+app.post('/addimg',upload.single('animalImage'), (req,res) =>{
+    const {email,description,title,animalname,
+            phonenumber,location} = req.body;
+            const {path1} = req.file.path;
+            db('licenta')
+            .returning('*')
+            .insert({
+                email:email,
+                description:description,
+                title:title,
+                animalname:animalname,
+                phonenumber:phonenumber,
+                location:location,
+                path: req.file.path
+            })
+            .into('announces1')
+            .then(user => {
+                res.json(user[0])})
+                .catch(err => {
+                    res.status(400).json('could not post announce');
+                    console.log(err);})
+    
+}
+);
+
+app.get('/allannounces', (req,res) => {
+    return  db.select('*').from('announces1')
+    .then(user => {
+        res.json(user);
+        console.log(user);
+    })
+    .catch(err => res.status(400).json('unable to get user'))
+
+});
+
+app.get('/lastannounces', (req,res) => {
+    return  db('announces1').orderBy('id','desc','limit 1')
+    .then(user => {
+        const response = [user[0],user[1]];
+        res.json(response);
+        console.log(response);
+    })
+
+
+    .catch(err => res.status(400).json('unable to get user'))
+
+});
+
+app.post('/allannouncesforauser', (req,res) => {
+    db.select('*').from('announces1').where('email','=',req.body.email)
+    .then(user => {
+        res.json(user);
+        console.log(user);
+    })
+    .catch(err => {res.status(400).json('unable to get user');
+    console.log('No announces for this user');})
+
 });
 app.listen(3001);
