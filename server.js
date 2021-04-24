@@ -26,8 +26,8 @@ const fileFilter = (req,file,cb) => {
 }
 const upload = multer({storage: storage,
     limits: {
-    fileSize: 1024*1024*5},
-    fileFilter:fileFilter
+    fileSize: 1024*1024*10},
+   //fileFilter:fileFilter JFIF not working with this
     });
 const db = knex({
     
@@ -50,6 +50,7 @@ app.use(bodyParser.json());
 app.post('/register', (req,res) => {
     const {email,firstname,lastname,password} = req.body;
     const hash = bcrypt.hashSync(password);
+
     db.transaction(trx => {
         trx.insert({
             hash: hash,
@@ -73,6 +74,7 @@ app.post('/register', (req,res) => {
             })
        
     .catch(err => res.status(400).json('Register error'))
+
 })
 
 
@@ -83,24 +85,28 @@ app.post('/signin', (req,res) => {
     .then(data => {
        const isValid = bcrypt.compareSync(req.body.password,data[0].hash);
        if(isValid){
+
          return  db.select('*').from('users').where('email','=',req.body.email)
            .then(user => {
+            console.log(user[0]);
                res.json(user[0])
            })
            .catch(err => res.status(400).json('unable to get user'))
        }
        else{
-           res.status(400).json('wrong credentials');
+           res.status(400).json('false');
        }
 
     })
-    .catch(err => status(400).json('wrong credentials'))
+    .catch(err => {
+        res.send('failed');
+        status(400).json('wrong credentials')})
 });
 
 
 app.post('/addimg',upload.single('animalImage'), (req,res) =>{
     const {email,description,title,animalname,
-            phonenumber,location} = req.body;
+            phonenumber,location,firstname,lastname,category} = req.body;
             const {path1} = req.file.path;
             db('licenta')
             .returning('*')
@@ -111,6 +117,10 @@ app.post('/addimg',upload.single('animalImage'), (req,res) =>{
                 animalname:animalname,
                 phonenumber:phonenumber,
                 location:location,
+                firstname:firstname,
+                lastname:lastname,
+                category:category,
+                timestamp: new Date(),
                 path: req.file.path
             })
             .into('announces1')
@@ -134,11 +144,10 @@ app.get('/allannounces', (req,res) => {
 });
 
 app.get('/lastannounces', (req,res) => {
-    return  db('announces1').orderBy('id','desc','limit 1')
+    return  db('announces1').orderBy('id','desc','limit 5')
     .then(user => {
-        const response = [user[0],user[1]];
+        const response = [user[0],user[1],user[2],user[3],user[4],user[5],user[6],user[7]];
         res.json(response);
-        console.log(response);
     })
 
 
