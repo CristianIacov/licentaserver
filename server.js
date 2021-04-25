@@ -104,10 +104,18 @@ app.post('/signin', (req,res) => {
 });
 
 
-app.post('/addimg',upload.single('animalImage'), (req,res) =>{
+
+const multipleUpload = upload.fields([{name: 'animalImage'}, {name: 'animalImage2'}, {name: 'animalImage3', maxCount: 3}]);
+
+app.post('/addimg',multipleUpload, (req,res) =>{
+
+            const {animalImage,animalImage2,animalImage3} = req.files;
+
+
+  
     const {email,description,title,animalname,
             phonenumber,location,firstname,lastname,category} = req.body;
-            const {path1} = req.file.path;
+ 
             db('licenta')
             .returning('*')
             .insert({
@@ -121,7 +129,9 @@ app.post('/addimg',upload.single('animalImage'), (req,res) =>{
                 lastname:lastname,
                 category:category,
                 timestamp: new Date(),
-                path: req.file.path
+                path: animalImage[0].path,
+                path2: animalImage2[0].path,
+                path3: animalImage3[0].path
             })
             .into('announces1')
             .then(user => {
