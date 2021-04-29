@@ -103,6 +103,58 @@ app.post('/signin', (req,res) => {
         status(400).json('wrong credentials')})
 });
 
+app.post('/getallmessages',(req,res) => {
+
+    const {email} = req.body;
+
+    return db.select('*').from('messages')
+    .where('destinationUser','=',email).orderBy('id','desc')
+    .then(user => {
+        console.log(user);
+        res.json(user);
+    })
+    .catch(err => console.log(err))
+}) 
+
+
+app.post('/messages', (req,res) => {
+        console.log(req.body);
+        const {sourceUser, destinationUser, message,advertId } = req.body;
+        db.insert({
+            sourceUser: sourceUser,
+            destinationUser: destinationUser,
+            message: message,
+            timestamp: new Date(),
+            advertId: advertId,
+            seen: false
+        }).into('messages')
+        .then(user => res.json('ok'))
+        .catch(err => res.status(400).json('unable to store message'))
+
+});
+
+
+app.post('/conversation', (req,res) => {
+    const {sourceUser, destinationUser, advertId} = req.body;
+    db.select('*').from('messages').where({
+        sourceUser: sourceUser,
+        destinationUser: destinationUser,
+        advertId: advertId
+    }).orWhere({
+        sourceUser: destinationUser,
+        destinationUser: sourceUser,
+        advertId: advertId
+    })
+    .then(data => res.json(data))
+    .catch(err => 
+        {
+            console.log(err);
+    res.status(400).json('failed to send conversation');
+
+})
+})
+
+
 
 
 const multipleUpload = upload.fields([{name: 'animalImage'}, {name: 'animalImage2'}, {name: 'animalImage3', maxCount: 3}]);
@@ -143,11 +195,13 @@ app.post('/addimg',multipleUpload, (req,res) =>{
 }
 );
 
-app.get('/allannounces', (req,res) => {
-    return  db.select('*').from('announces1')
+app.post('/allannounces', (req,res) => {
+    return  db.select('*').from('announces1').where('category','=',req.body.category)
     .then(user => {
-        res.json(user);
-        console.log(user);
+        console.log(user[0].location);
+       const result = user.filter(res => JSON.stringify(res.location).toLowerCase().includes(req.body.location.toLowerCase()));
+        res.json(result);
+
     })
     .catch(err => res.status(400).json('unable to get user'))
 
