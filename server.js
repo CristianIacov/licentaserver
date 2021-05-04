@@ -47,6 +47,7 @@ app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
 
+
 app.post('/register', (req,res) => {
     const {email,firstname,lastname,password} = req.body;
     const hash = bcrypt.hashSync(password);
@@ -77,7 +78,82 @@ app.post('/register', (req,res) => {
 
 })
 
+app.post('/deleteadvert',(req,res) => {
+    console.log(req.body);
+    const {email, id, feedback, reasonForDelete} = req.body;
+    db.transaction(trx =>{
+        trx.delete('*')
+        .from('announces1')
+        .where('id','=',id)
+        .then(data => {
+            return trx('deletedPosts')
+            .returning('*')
+            .insert({
+             email: email,
+             feedback: feedback,
+             reason: reasonForDelete,              
+            })
+            .then(user => res.json('ok'))     })
+            .then(trx.commit)
+            .catch(trx.rollback)
 
+   
+    }
+    )
+                .catch(err => {
+                res.json('nok')
+                console.log(err);
+            }
+            )
+});
+
+app.post('/giverating',(req,res) => {
+    const {sourceUser, destinationUser, rating} = req.body;
+    var hasEntries = true;
+    db.select('*').from('ratings')
+    .where({
+        sourceUser: sourceUser,
+        destinationUser: destinationUser
+    })
+    .then(user => {
+        if(user[0])
+            hasEntries = false;
+        if(hasEntries == true){
+            db.insert({
+                 sourceUser: sourceUser,
+                 destinationUser: destinationUser,
+                 rating: rating
+            }).into('ratings')
+            .then(user => res.json('ok'))
+                .catch(err => {
+        res.json('bad request');
+        console.log(err);})
+        }
+    })
+    .catch(err => {
+        res.json('bad request');
+        console.log(err);})
+
+})
+
+
+app.post('/getratingforuser',(req,res) => {
+    const {destinationUser} = req.body;
+    db.raw('select avg(rating) from ratings where "destinationUser" = ?',destinationUser)
+    .then(user => res.json(user.rows[0].avg))
+    .catch(err => {
+        res.json('could not get result');
+        console.log(err);
+    })
+})
+
+app.get('/savedanimals',(req,res) => {
+    return db.select('*').from('deletedPosts').where('reason','=','Animalutul a fost adoptat')
+    .then(data => res.json(data.length))
+    .catch(err => {
+        console.log(err);
+        res.json('could not send number of animals saved');})
+})
 
 app.post('/signin', (req,res) => {
     db.select('email','hash').from('login')
@@ -136,6 +212,7 @@ app.post('/messages', (req,res) => {
 
 app.post('/conversation', (req,res) => {
     const {sourceUser, destinationUser, advertId} = req.body;
+
     db.select('*').from('messages').where({
         sourceUser: sourceUser,
         destinationUser: destinationUser,
@@ -150,6 +227,7 @@ app.post('/conversation', (req,res) => {
         {
             console.log(err);
     res.status(400).json('failed to send conversation');
+
 
 })
 })
@@ -229,4 +307,8 @@ app.post('/allannouncesforauser', (req,res) => {
     console.log('No announces for this user');})
 
 });
+
+
+
+
 app.listen(3001);
