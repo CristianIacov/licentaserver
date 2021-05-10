@@ -46,7 +46,24 @@ app.use(cors());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
+app.get('/adoptdog', (req,res) => {
+        return  db('announces1').orderBy('id','desc','limit 5').where('category','=','Caini')
+    .then(user => {
+        const response = [user[0],user[1],user[2],user[3]];
+        res.json(response);
+})
+    .catch(err => console.log(err))
+});
 
+
+app.get('/adoptcat', (req,res) => {
+        return  db('announces1').orderBy('id','desc','limit 5').where('category','=','Pisici')
+    .then(user => {
+        const response = [user[0],user[1],user[2],user[3]];
+        res.json(response);
+})
+    .catch(err => console.log(err))
+});
 
 app.post('/register', (req,res) => {
     const {email,firstname,lastname,password} = req.body;
