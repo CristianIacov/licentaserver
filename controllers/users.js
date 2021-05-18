@@ -92,10 +92,18 @@ const handleCalculateRating = (db, req, res) => {
         console.log(err);
     })
 }
+const handleGetUserName = (db, req, res) => {
 
+	const {email} = req.body;
+	db.select('*').from('users')
+	.where('email','=',email)
+	.then(user => res.json(`${user.lastname}${user.firstname}`))
+	.catch(err => res.json('could not get name'))
+}
 module.exports = {
 	handleSignIn: handleSignIn,
 	handleRegister: handleRegister,
 	handleRating: handleRating,
-	handleCalculateRating: handleCalculateRating
+	handleCalculateRating: handleCalculateRating,
+	handleGetUserName: handleGetUserName
 }
