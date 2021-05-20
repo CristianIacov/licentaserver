@@ -8,6 +8,7 @@ const announces = require('./controllers/announces');
 const messages = require('./controllers/messages');
 const usersRequests = require('./controllers/users')
 const animals = require('./controllers/animals');
+const crawler = require('./controllers/crawler');
 const app = express();
 
 
@@ -47,6 +48,8 @@ const db = knex({
       database : 'licenta'
     }
   });
+
+app.post('/crawler',  (req,res) => crawler.crawlMultipleSites(req, res));
 
 app.get('/adoptdog', (req,res) => animals.handleAdoptDog(db, req, res));
 
