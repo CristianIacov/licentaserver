@@ -17,16 +17,15 @@ const getUrl = (link, host, protocol) => {
 
 
 const crawl = async ({ url, ignore, websiteIndex, location, animalType }) => {
+
   if (seenUrls[url] || numberOfAdvertsFound[websiteIndex] >= 1) {
   	return;}
 
   if(url.includes(animalType) && url.includes(location)){
    numberOfAdvertsFound[websiteIndex]++;
    await advertsUrl.push(url);
-
-  	console.log("crawling", url);
+   console.log("crawling", url);
   }
-    console.log("crawling", url);
   seenUrls[url] = true;
   const { host, protocol } = urlParser.parse(url);
 
@@ -37,15 +36,12 @@ const crawl = async ({ url, ignore, websiteIndex, location, animalType }) => {
 catch(err){
 	console.log(err);
 }
-
   const html = await response.text();
+
   const $ = cheerio.load(html);
   const links = $("a")
     .map((i, link) => link.attribs.href)
     .get();
-
-
-
 
   links
     .filter((link) => link.includes(host) && !link.includes(ignore))

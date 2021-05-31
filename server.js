@@ -49,6 +49,8 @@ const db = knex({
     }
   });
 
+
+
 app.post('/crawler',  (req,res) => crawler.crawlMultipleSites(req, res));
 
 app.get('/adoptdog', (req,res) => animals.handleAdoptDog(db, req, res));
